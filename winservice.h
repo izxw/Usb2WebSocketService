@@ -4,6 +4,8 @@
 #include "qtservice.h"
 #include "webservice.h"
 
+#define USB_MODEL
+
 class WinService : public QtService<QCoreApplication>
 {
 public:

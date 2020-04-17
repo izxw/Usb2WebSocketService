@@ -10,7 +10,10 @@
 #include <QMap>
 #include <QtSerialPort/QSerialPort>
 #include <QSettings>
+#include <QThread>
 #include <QDebug>
+#include "usbmonitor.h"
+#include "lusb0_usb.h"
 
 QT_FORWARD_DECLARE_CLASS(QWebSocketServer)
 QT_FORWARD_DECLARE_CLASS(QWebSocket)
@@ -23,6 +26,7 @@ public:
     ~WebService();
 Q_SIGNALS:
     void closed();
+    void startMonitor(const QString &);
 private Q_SLOTS:
     void onNewConnection();
     void processTextMessage(QString message);
@@ -37,10 +41,14 @@ private Q_SLOTS:
     void reciveCom2Ws_2(int num);
     void reciveCom2Ws_3(int num);
 
+    void reciveMessage(const QString &);
+
 private:
     QWebSocketServer *m_pWebSocketServer;
     bool m_debug;
     QSettings* setting;
+    UsbMonitor* m_usb;
+    QThread* m_objThread;
 
     QList<QWebSocket *> m_clients;
     QList<QString> log;
@@ -57,6 +65,9 @@ private:
     quint16 num_3;
 
     QRegExp rx;
+
+private:
+    void startThread();
 
 };
 

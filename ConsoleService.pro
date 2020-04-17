@@ -3,7 +3,7 @@ include(ConsoleService.pri)
 QT += core websockets serialport
 QT -= gui
 
-TARGET = myservice
+TARGET = UsbMonitor
 CONFIG += c++11 console
 CONFIG -= app_bundle
 TEMPLATE = app
@@ -14,6 +14,7 @@ DESTDIR = $$PWD/$$PROJ_SPEC
 
 SOURCES += \
         main.cpp \
+        usbmonitor.cpp \
         webservice.cpp \
         winservice.cpp
 
@@ -23,6 +24,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     dlog.h \
+    lusb0_usb.h \
+    usbmonitor.h \
     webservice.h \
     winservice.h
 
@@ -32,3 +35,8 @@ DISTFILES += \
 include(qtservice/qtservice.pri)
 
 
+
+win32: LIBS += -L$$PWD/./ -lusb
+
+INCLUDEPATH += $$PWD/.
+DEPENDPATH += $$PWD/.

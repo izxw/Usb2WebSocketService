@@ -14,6 +14,7 @@ WebService::WebService(bool debug, QObject *parent)
     rx.setPattern("^(config)(1{1}|2{1}|3{1})$");
 
     quint16 port = 9009;
+
     serial_1 = "COM1";
     serial_2 = "COM2";
     serial_3 = "COM3";
@@ -29,7 +30,7 @@ WebService::WebService(bool debug, QObject *parent)
                 this, &WebService::onNewConnection);
         connect(m_pWebSocketServer, &QWebSocketServer::closed, this, &WebService::closed);
     }
-
+#ifdef USB_MODEL
     //COM1
     m_serialPort_1 = new QSerialPort();
     if(m_serialPort_1->isOpen())
@@ -94,14 +95,47 @@ WebService::WebService(bool debug, QObject *parent)
     connect(m_serialPort_1,&QSerialPort::readyRead,this,[=](){reciveCom2Ws_1(num_1);});
     connect(m_serialPort_2,&QSerialPort::readyRead,this,[=](){reciveCom2Ws_2(num_2);});
     connect(m_serialPort_3,&QSerialPort::readyRead,this,[=](){reciveCom2Ws_3(num_3);});
-
+#else
+    startThread();
+    emit startMonitor("123");
+#endif
 }
-
 
 WebService::~WebService()
 {
     m_pWebSocketServer->close();
     qDeleteAll(m_clients.begin(), m_clients.end());
+    m_usb->stopImmediately();
+    m_objThread->quit();
+    m_objThread->wait();
+}
+
+void WebService::startThread()
+{
+
+    m_objThread = new QThread;
+    m_usb = new UsbMonitor();
+    m_usb->moveToThread(m_objThread);
+
+    connect(m_objThread,&QThread::finished,m_usb,&QObject::deleteLater);
+    connect(this,&WebService::startMonitor,m_usb,&UsbMonitor::startScan);
+    connect(m_usb,&UsbMonitor::message,this,&WebService::reciveMessage);
+
+    m_objThread->start();
+
+}
+
+void WebService::reciveMessage(const QString& str)
+{
+    foreach (auto k, m_clients)
+    {
+        QWebSocket *pClient = qobject_cast<QWebSocket *>(k);
+        if (pClient)
+        {
+//            log.push_back(str);
+            pClient->sendTextMessage(str);
+        }
+    }
 }
 
 void WebService::onNewConnection()
